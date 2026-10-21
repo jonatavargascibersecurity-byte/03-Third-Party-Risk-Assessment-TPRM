@@ -1,0 +1,11 @@
+contract_id,vendor_id,contract_type,start_date,end_date,auto_renew,notice_period_days,exit_plan_required,security_addendum,dpa_signed,subprocessors_required,owner,status
+CT-001,V-001,Master Services Agreement,2025-01-01,2027-01-01,false,90,true,true,true,true,Head de Third-Party Risk,Ativo
+CT-002,V-002,Payment Services Agreement,2025-03-01,2027-03-01,false,60,true,true,true,true,Head de Third-Party Risk,Ativo
+CT-003,V-003,Cloud Services Agreement,2025-06-01,2026-06-01,false,30,true,true,true,true,Head de Third-Party Risk,Vencendo
+CT-004,V-004,Data Processing Agreement,2025-02-01,2027-02-01,false,90,true,true,true,true,Head de Third-Party Risk,Ativo
+CT-005,V-005,Connectivity Agreement,2024-09-01,2026-09-01,false,30,true,false,false,false,Head de Third-Party Risk,Vencendo
+CT-006,V-006,Email Services Agreement,2025-04-01,2026-04-01,false,30,true,false,false,false,Head de Third-Party Risk,Vencendo
+CT-007,V-007,Data Processing Agreement,2025-07-01,2027-07-01,false,60,true,true,true,true,Head de Third-Party Risk,Ativo
+CT-008,V-008,ITSM Services Agreement,2025-05-01,2026-11-01,false,30,true,false,false,false,Head de Third-Party Risk,Ativo
+CT-009,V-009,Source Control Agreement,2025-01-15,2027-01-15,false,90,true,true,true,true,Head de Third-Party Risk,Ativo
+CT-010,V-010,Log Platform Agreement,2025-08-01,2027-08-01,false,90,true,true,true,true,Head de Third-Party Risk,Ativo

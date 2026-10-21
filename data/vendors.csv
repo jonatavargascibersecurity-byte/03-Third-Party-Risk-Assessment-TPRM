@@ -1,0 +1,11 @@
+vendor_id,vendor_name,category,criticality,tier,data_access,network_access,contract_start,contract_end,onboard_date,owner,status,country
+V-001,SecureAuth Ltd,Identity Provider,Crítico,Tier 1,SSO user directory,Privilegiado,2025-01-01,2027-01-01,2024-12-01,Head de Third-Party Risk,Ativo,IE
+V-002,TransactBridge,Payment Gateway,Crítico,Tier 1,PII transacional,Acesso a API,2025-03-01,2027-03-01,2025-02-01,Head de Third-Party Risk,Ativo,BR
+V-003,CloudShield,Cloud Security,WAF/EDR,Alto,Tier 2,Configuracao de seguranca,API management,2025-06-01,2026-06-01,2025-05-01,Head de Third-Party Risk,Ativo,US
+V-004,DataScan,KYC/AML Provider,Crítico,Tier 1,Dados cadastrais e biometricos,API privilegiado,2025-02-01,2027-02-01,2025-01-10,Head de Third-Party Risk,Ativo,UK
+V-005,TelecomNet,ISP/Connectivity,Alto,Tier 2,Metadados de rede,Sem acesso direto a dados,2024-09-01,2026-09-01,2024-08-15,Head de Third-Party Risk,Ativo,BR
+V-006,MailFlow,Email Provider,Alto,Tier 2,Emails corporativos,API,2025-04-01,2026-04-01,2025-03-15,Head de Third-Party Risk,Ativo,DE
+V-007,InsightBI,Analytics/BI,Alto,Tier 2,Dados anonimizados em partes,Leitura restrita,2025-07-01,2027-07-01,2025-06-01,Head de Third-Party Risk,Ativo,NL
+V-008,HelpDeskPlus,ITSM,Alto,Tier 2,Chamados e ativos,API,2025-05-01,2026-11-01,2025-04-20,Head de Third-Party Risk,Ativo,US
+V-009,CodeRepoPro,Source Control,Crítico,Tier 1,Repositorio de codigo,Sistema critico,2025-01-15,2027-01-15,2025-01-05,Head de Third-Party Risk,Ativo,CA
+V-010,LogHub,SIEM/Log Platform,Crítico,Tier 1,Logs de seguranca,Acesso ao ambiente log,2025-08-01,2027-08-01,2025-07-10,Head de Third-Party Risk,Ativo,US
