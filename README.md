@@ -1,22 +1,22 @@
-# Third-Party Risk Assessment (TPRM) Toolkit
+# Toolkit de Avaliação de Risco de Terceiros (TPRM)
 
-Vendor risk management toolkit for a fictional Brazilian fintech (**Meridian Pay**). Covers vendor tiering, risk scoring, findings tracking and contract risk monitoring.
+Toolkit de gestão de risco de fornecedores para uma fintech brasileira fictícia (**Meridian Pay**). Cobre tiering de fornecedores, score de risco, acompanhamento de achados e monitoramento de risco contratual.
 
-## Why TPRM entry-level
+## Por que TPRM para entrada
 
-Banks, fintechs, Big 4 and MSSPs need third-party risk analysts. This project maps directly to **DORA** (ICT third-party risk), **LGPD** (data processor / transfer), **NIST SP 800-161** and **ISO/IEC 27001 A.5.19-A.5.23**.
+Bancos, fintechs, Big 4 e MSSPs precisam de analistas de risco de terceiros. Este projeto mapeia diretamente para **DORA** (risco de terceiros de TIC), **LGPD** (operador / transferência de dados), **NIST SP 800-161** e **ISO/IEC 27001 A.5.19-A.5.23**.
 
-## Features
+## Funcionalidades
 
-- **Vendor register**: criticality, tier, data/network access, ownership, country
-- **Risk scoring**: criticality + open Critical/High findings (weighted)
-- **Assessments**: due diligence records with framework and questionnaire version
-- **Findings**: severity, mitigation, evidence required, owner, target date
-- **Contract risk**: expiry, notice period, exit plan, security addendum, DPA, subprocessors
+- **Registro de fornecedores**: criticidade, tier, acesso a dados/rede, responsável, país
+- **Score de risco**: criticidade + achados Críticos/Altos em aberto (ponderado)
+- **Avaliações**: registros de due diligence com framework e versão de questionário
+- **Achados**: severidade, mitigação, evidência necessária, responsável, prazo
+- **Risco contratual**: vencimento, prazo de aviso, plano de saída, addendum de segurança, DPA, subprocessadores
 - **CLI**: `validate`, `summary`, `vendors`, `findings`, `report`, `dashboard`
-- **Zero deps**: pure Python stdlib, CSV single source of truth
+- **Sem dependências**: Python puro (stdlib), CSV como fonte única da verdade
 
-## Quick start
+## Início rápido
 
 ```bash
 cd 03-Third-Party-Risk-Assessment-TPRM
@@ -29,13 +29,13 @@ python -m tprm report --out build
 python -m tprm dashboard --out build
 ```
 
-## Data model
+## Estrutura de dados
 
-- `data/vendors.csv` - vendor register
-- `data/assessments.csv` - due diligence assessments
-- `data/findings.csv` - findings and mitigations
-- `data/contracts.csv` - contract and clause monitoring
+- `data/vendors.csv` - registro de fornecedores
+- `data/assessments.csv` - avaliações de due diligence
+- `data/findings.csv` - achados e mitigações
+- `data/contracts.csv` - monitoramento de contratos e cláusulas
 
-## License
+## Licença
 
 MIT
