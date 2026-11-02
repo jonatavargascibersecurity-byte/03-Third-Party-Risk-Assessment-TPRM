@@ -25,8 +25,8 @@ python -m tprm validate
 python -m tprm summary
 python -m tprm vendors
 python -m tprm findings
-python -m tprm report --out build
-python -m tprm dashboard --out build
+python -m tprm --out build report
+python -m tprm --out build dashboard
 python -m tprm --out build risk
 python -m tprm --out build questionnaire
 python -m tprm --out build exit-plan --as-of 2026-11-02
