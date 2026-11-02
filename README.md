@@ -9,11 +9,13 @@ Bancos, fintechs, Big 4 e MSSPs precisam de analistas de risco de terceiros. Est
 ## Funcionalidades
 
 - **Registro de fornecedores**: criticidade, tier, acesso a dados/rede, responsável, país
-- **Score de risco**: criticidade + achados Críticos/Altos em aberto (ponderado)
+- **Risco inerente x residual**: inerente = criticidade + sensibilidade de dados + alcance de rede; residual = inerente - crédito do questionário + achados abertos (limitado ao inerente)
+- **Concentração de terceiros**: por categoria e país, com alerta acima de 25% (DORA Art. 29)
 - **Avaliações**: registros de due diligence com framework e versão de questionário
 - **Achados**: severidade, mitigação, evidência necessária, responsável, prazo
 - **Risco contratual**: vencimento, prazo de aviso, plano de saída, addendum de segurança, DPA, subprocessadores
-- **CLI**: `validate`, `summary`, `vendors`, `findings`, `report`, `dashboard`
+- **Status contratual por data**: `Vencido` / `Vencendo` / `Ativo` é derivado de `end_date`, não de campo manual
+- **CLI**: `validate`, `summary`, `vendors`, `findings`, `report`, `dashboard`, `risk`, `questionnaire`, `exit-plan`
 - **Sem dependências**: Python puro (stdlib), CSV como fonte única da verdade
 
 ## Início rápido
@@ -22,11 +24,11 @@ Bancos, fintechs, Big 4 e MSSPs precisam de analistas de risco de terceiros. Est
 cd 03-Third-Party-Risk-Assessment-TPRM
 pip install -e ".[dev]"
 python -m tprm validate
-python -m tprm summary
+python -m tprm summary --as-of 2026-11-02
 python -m tprm vendors
 python -m tprm findings
-python -m tprm --out build report
-python -m tprm --out build dashboard
+python -m tprm --out build report --as-of 2026-11-02
+python -m tprm --out build dashboard --as-of 2026-11-02
 python -m tprm --out build risk
 python -m tprm --out build questionnaire
 python -m tprm --out build exit-plan --as-of 2026-11-02
@@ -51,13 +53,15 @@ Este repositório é um laboratório de prática para trilhas de GRC, risco de t
 | `python -m tprm --out build risk` | `build/tprm-risk-assessment.md` | Inerente x residual por fornecedor + concentração por categoria e país (DORA Art. 29). |
 | `python -m tprm --out build questionnaire` | `build/tprm-questionnaire.md` | Cobertura, compliance ponderado e lacunas por fornecedor. |
 | `python -m tprm --out build exit-plan --as-of YYYY-MM-DD` | `build/tprm-exit-plans.md` | Checklist Tier 1 (DORA Art. 28-30) + runbook de saída em 7 passos. |
+| `python -m tprm --out build report --as-of YYYY-MM-DD` | `build/tprm-report.md` | Relatório executivo com o mesmo modelo residual e status contratual por data. |
+| `python -m tprm --out build dashboard --as-of YYYY-MM-DD` | `build/tprm-dashboard.html` | Dashboard autocontido com os mesmos números de `risk` e `report`. |
 
-O risco residual nunca ultrapassa o inerente: achados erodem o benefício dos controles, não criam exposição nova. O template de write-up está em [`learning-log/000-template.md`](learning-log/000-template.md).
+O risco residual nunca ultrapassa o inerente: achados erodem o benefício dos controles, não criam exposição nova. Contratos vencidos contam como gap no exit plan, mesmo que o campo `status` do CSV esteja desatualizado. O template de write-up está em [`learning-log/000-template.md`](learning-log/000-template.md).
 
 ## Estrutura de dados
 
 - `data/vendors.csv` - registro de fornecedores
-- `data/assessments.csv` - avaliações de due diligence
+- `data/assessments.csv` - avaliações de due diligence; `inherent_risk`/`overall_risk` (pré-mitigação) e `residual_risk` (pós-mitigação) são validados contra o modelo canônico por `python -m tprm validate`
 - `data/findings.csv` - achados e mitigações
 - `data/contracts.csv` - monitoramento de contratos e cláusulas
 - `data/questionnaire.csv` - perguntas de due diligence (peso, evidência esperada)

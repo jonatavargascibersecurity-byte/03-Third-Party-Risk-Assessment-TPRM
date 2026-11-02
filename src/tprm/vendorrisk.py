@@ -86,6 +86,24 @@ class ExitPlan:
         return [c for c in self.checks if c.status == "A confirmar"]
 
 
+def contract_timing(contract: Contract, as_of: date, window_days: int = 90) -> tuple[str, int]:
+    """Return ``(state, days_to_end)`` using dates, not the manual status field.
+
+    ``state`` is ``Vencido`` (end date in the past), ``Vencendo`` (inside the
+    renewal window) or ``Ativo``. Negative ``days_to_end`` means days overdue.
+    """
+
+    try:
+        days_to_end = (date.fromisoformat(contract.end_date) - as_of).days
+    except ValueError:
+        return "Indefinido", 0
+    if days_to_end < 0:
+        return "Vencido", days_to_end
+    if days_to_end <= window_days:
+        return "Vencendo", days_to_end
+    return "Ativo", days_to_end
+
+
 def _factor(response: str) -> float | None:
     value = response.strip()
     if value in ("Nao", "Não", "NAO", "NÃO"):
@@ -164,6 +182,36 @@ def assess_vendors(t: TPRMSet) -> list[VendorRiskDetail]:
             d.vendor_id,
         ),
     )
+
+
+def assessment_consistency_issues(t: TPRMSet) -> list[str]:
+    """Flag stored assessment ratings that diverge from the canonical model.
+
+    ``assessments.csv`` keeps an audit snapshot, so its ``inherent_risk`` and
+    ``residual_risk`` must equal what ``assess_vendors`` derives from the
+    vendor profile, questionnaire and open findings. ``overall_risk`` follows
+    the pre-mitigation rating (same convention already used in the CSV).
+    """
+
+    details = {detail.vendor_id: detail for detail in assess_vendors(t)}
+    issues: list[str] = []
+    for assessment in t.assessments:
+        detail = details.get(assessment.vendor_id)
+        if detail is None:
+            continue
+        expected = {
+            "overall_risk": detail.inherent_level,
+            "inherent_risk": detail.inherent_level,
+            "residual_risk": detail.residual_level,
+        }
+        for field, value in expected.items():
+            actual = getattr(assessment, field)
+            if actual != value:
+                issues.append(
+                    f"{assessment.assessment_id}: {field} '{actual}' does not "
+                    f"match the canonical model '{value}'"
+                )
+    return issues
 
 
 def concentration(
@@ -245,16 +293,19 @@ def _yes(raw: str) -> bool:
 def _checks(
     vendor: Vendor, contract: Contract, as_of: date, renewal_window_days: int
 ) -> list[ChecklistItem]:
-    try:
-        days_to_end = (date.fromisoformat(contract.end_date) - as_of).days
-    except ValueError:
-        days_to_end = 10_000
-
-    renewal = (
-        f"Contrato vence em {days_to_end} dias - abrir revisao."
-        if 0 <= days_to_end <= renewal_window_days
-        else f"Vencimento em {contract.end_date}."
-    )
+    state, days_to_end = contract_timing(contract, as_of, renewal_window_days)
+    if state == "Vencido":
+        renewal_status = "Gap"
+        renewal = f"Contrato vencido ha {abs(days_to_end)} dias - renovar ou executar saida."
+    elif state == "Vencendo":
+        renewal_status = "Atencao"
+        renewal = f"Contrato vence em {days_to_end} dias - abrir revisao."
+    elif state == "Indefinido":
+        renewal_status = "A confirmar"
+        renewal = f"Data de vencimento invalida: {contract.end_date!r}."
+    else:
+        renewal_status = "OK"
+        renewal = f"Vencimento em {contract.end_date}."
 
     return [
         ChecklistItem(
@@ -292,7 +343,7 @@ def _checks(
         ),
         ChecklistItem(
             "Janela de renovacao monitorada",
-            "Atencao" if 0 <= days_to_end <= renewal_window_days else "OK",
+            renewal_status,
             renewal,
         ),
         ChecklistItem(

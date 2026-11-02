@@ -1,12 +1,17 @@
-"""TPRM static HTML dashboard."""
+"""TPRM static HTML dashboard.
+
+The dashboard reads the same inherent/residual model as ``tprm risk`` so the
+cards, the report and the CLI summary always agree.
+"""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from html import escape
 from pathlib import Path
 
 from .loader import TPRMSet
+from .vendorrisk import assess_vendors, contract_timing
 
 CSS = """
 :root{--bg:#f4f6f8;--card:#fff;--ink:#1b2430;--muted:#5c6b7a;--line:#dfe5ec}
@@ -29,48 +34,138 @@ tr:last-child td{border-bottom:none}
 footer{color:var(--muted);font-size:12px;margin-top:32px;border-top:1px solid var(--line);padding-top:12px}
 """
 
-SEV_COLOR = {"Crítico": "#c62828", "Alto": "#ef6c00", "Moderado": "#f9a825", "Baixo": "#2e7d32"}
+SEV_COLOR = {
+    "Crítico": "#c62828",
+    "Alto": "#ef6c00",
+    "Moderado": "#f9a825",
+    "Baixo": "#2e7d32",
+}
+STATE_COLOR = {"Vencido": "#c62828", "Vencendo": "#ef6c00", "Ativo": "#2e7d32"}
 
 
-def _esc(x): return escape(str(x), quote=True)
-def _pill(t, c="#5c6b7a"): return f"<span class='pill' style='background:{c}'>{_esc(t)}</span>"
+def _esc(x):
+    return escape(str(x), quote=True)
 
 
-def build_dashboard(t: TPRMSet, generated_at: datetime | None = None) -> str:
+def _pill(text, color="#5c6b7a"):
+    return f"<span class='pill' style='background:{color}'>{_esc(text)}</span>"
+
+
+def build_dashboard(
+    t: TPRMSet,
+    generated_at: datetime | None = None,
+    as_of: date | None = None,
+) -> str:
     now = generated_at or datetime.now(timezone.utc)
+    reference = as_of or date.today()
+    details = assess_vendors(t)
+    contracts = t.contracts_by_vendor
+    states = {
+        contract.contract_id: contract_timing(contract, reference)
+        for contract in t.contracts
+    }
     openf = [f for f in t.findings if f.status != "Fechado"]
-    crit = sum(1 for v in t.vendors if t.vendor_risk(v) == "Crítico")
-    high = sum(1 for v in t.vendors if t.vendor_risk(v) == "Alto")
+    crit = sum(1 for d in details if d.residual_level == "Crítico")
+    high = sum(1 for d in details if d.residual_level == "Alto")
+    expired = sum(1 for state, _ in states.values() if state == "Vencido")
+    expiring = sum(1 for state, _ in states.values() if state == "Vencendo")
+
     html = []
     add = html.append
-    add("<!DOCTYPE html><html lang='pt-BR'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>")
+    add(
+        "<!DOCTYPE html><html lang='pt-BR'><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
+    )
     add("<title>TPRM Dashboard - Meridian Pay</title>")
     add(f"<style>{CSS}</style></head><body>")
-    add(f"<header><h1>Third-Party Risk Assessment (TPRM) - {TPRMSet.__name__ and 'Meridian Pay'}</h1>")
-    add(f"<p>Fictional Brazilian fintech &#183; generated {now.strftime('%Y-%m-%d %H:%M UTC')}</p></header>")
+    add("<header><h1>Third-Party Risk Assessment (TPRM) - Meridian Pay</h1>")
+    add(
+        f"<p>Fictional Brazilian fintech &#183; generated "
+        f"{now.strftime('%Y-%m-%d %H:%M UTC')} &#183; reference {reference.isoformat()}</p>"
+        "</header>"
+    )
     add("<main>")
     add("<div class='cards'>")
-    add(f"<div class='card'><div class='label'>Vendors</div><div class='value'>{len(t.vendors)}</div><div class='sub'>{crit} Critical / {high} High</div></div>")
-    add(f"<div class='card'><div class='label'>Assessments</div><div class='value'>{len(t.assessments)}</div><div class='sub'>due diligence</div></div>")
-    add(f"<div class='card'><div class='label'>Open findings</div><div class='value'>{len(openf)}</div><div class='sub'>{sum(1 for f in openf if f.severity=='Crítico')} Critical</div></div>")
-    add(f"<div class='card'><div class='label'>Contracts expiring</div><div class='value'>{sum(1 for c in t.contracts if c.status=='Vencendo')}</div><div class='sub'>action needed</div></div>")
+    add(
+        f"<div class='card'><div class='label'>Vendors</div>"
+        f"<div class='value'>{len(t.vendors)}</div>"
+        f"<div class='sub'>{crit} Critical / {high} High (residual)</div></div>"
+    )
+    add(
+        f"<div class='card'><div class='label'>Assessments</div>"
+        f"<div class='value'>{len(t.assessments)}</div>"
+        f"<div class='sub'>due diligence</div></div>"
+    )
+    add(
+        f"<div class='card'><div class='label'>Open findings</div>"
+        f"<div class='value'>{len(openf)}</div>"
+        f"<div class='sub'>{sum(1 for f in openf if f.severity == 'Crítico')} Critical</div></div>"
+    )
+    add(
+        f"<div class='card'><div class='label'>Contract dates</div>"
+        f"<div class='value'>{expired + expiring}</div>"
+        f"<div class='sub'>{expired} expired / {expiring} expiring</div></div>"
+    )
     add("</div>")
-    add("<h2>Vendor Risk Register</h2><table><thead><tr><th>ID</th><th>Vendor</th><th>Category</th><th>Criticality</th><th>Tier</th><th>Vendor risk</th><th>Contract end</th></tr></thead><tbody>")
-    for v in sorted(t.vendors, key=lambda x: {"Crítico":0,"Alto":1,"Moderado":2,"Baixo":3}[t.vendor_risk(x)]):
-        vr = t.vendor_risk(v)
-        add(f"<tr><td>{_esc(v.vendor_id)}</td><td>{_esc(v.vendor_name)}</td><td>{_esc(v.category)}</td><td>{_esc(v.criticality)}</td><td>{_esc(v.tier)}</td><td>{_pill(vr, SEV_COLOR[vr])}</td><td class='muted'>{_esc(v.contract_end)}</td></tr>")
+    add(
+        "<h2>Vendor Risk Register - Inherent x Residual</h2><table><thead><tr>"
+        "<th>ID</th><th>Vendor</th><th>Tier</th><th>Inherent</th><th>Residual</th>"
+        "<th>Compliance</th><th>Open C/H</th><th>Contract end</th><th>Contract state</th>"
+        "</tr></thead><tbody>"
+    )
+    for detail in details:
+        contract = contracts.get(detail.vendor_id)
+        if contract is None:
+            end_date, state, days = "-", "-", 0
+        else:
+            end_date = contract.end_date
+            state, days = states[contract.contract_id]
+        state_text = f"{state} ({abs(days)}d)" if state in ("Vencido", "Vencendo") else state
+        pct = f"{detail.compliance_pct}%" if detail.compliance_pct is not None else "n/a"
+        add(
+            f"<tr><td>{_esc(detail.vendor_id)}</td><td>{_esc(detail.vendor_name)}</td>"
+            f"<td>{_esc(detail.tier)}</td>"
+            f"<td>{_pill(detail.inherent_level, SEV_COLOR[detail.inherent_level])} "
+            f"({detail.inherent_score})</td>"
+            f"<td>{_pill(detail.residual_level, SEV_COLOR[detail.residual_level])} "
+            f"({detail.residual_score})</td>"
+            f"<td>{_esc(pct)}</td>"
+            f"<td>{detail.open_critical}/{detail.open_high}</td>"
+            f"<td class='muted'>{_esc(end_date)}</td>"
+            f"<td>{_pill(state_text, STATE_COLOR.get(state, '#5c6b7a'))}</td></tr>"
+        )
     add("</tbody></table>")
-    add("<h2>Open Findings</h2><table><thead><tr><th>ID</th><th>Vendor</th><th>Severity</th><th>Category</th><th>Mitigation</th><th>Target</th></tr></thead><tbody>")
-    for f in sorted(openf, key=lambda x: {"Crítico":4,"Alto":3,"Moderado":2,"Baixo":1}[x.severity], reverse=True):
-        add(f"<tr><td>{_esc(f.finding_id)}</td><td>{_esc(f.vendor_id)}</td><td>{_pill(f.severity, SEV_COLOR[f.severity])}</td><td>{_esc(f.category)}</td><td>{_esc(f.recommended_mitigation)}</td><td class='muted'>{_esc(f.target_date)}</td></tr>")
+    add(
+        "<h2>Open Findings</h2><table><thead><tr><th>ID</th><th>Vendor</th>"
+        "<th>Severity</th><th>Category</th><th>Mitigation</th><th>Target</th>"
+        "</tr></thead><tbody>"
+    )
+    for finding in sorted(
+        openf,
+        key=lambda x: {"Crítico": 4, "Alto": 3, "Moderado": 2, "Baixo": 1}[x.severity],
+        reverse=True,
+    ):
+        add(
+            f"<tr><td>{_esc(finding.finding_id)}</td><td>{_esc(finding.vendor_id)}</td>"
+            f"<td>{_pill(finding.severity, SEV_COLOR[finding.severity])}</td>"
+            f"<td>{_esc(finding.category)}</td>"
+            f"<td>{_esc(finding.recommended_mitigation)}</td>"
+            f"<td class='muted'>{_esc(finding.target_date)}</td></tr>"
+        )
     add("</tbody></table>")
-    add("<footer>Generated by <span class='mono'>python -m tprm dashboard</span> &#183; portfolio project, fictional scenario.</footer>")
+    add(
+        "<footer>Generated by <span class='mono'>python -m tprm dashboard</span> "
+        "&#183; inherent/residual model shared with <span class='mono'>tprm risk</span> "
+        "&#183; portfolio project, fictional scenario.</footer>"
+    )
     add("</main></body></html>")
     return "\n".join(html)
 
 
-def write_dashboard(t: TPRMSet, out: str | Path) -> Path:
+def write_dashboard(
+    t: TPRMSet, out: str | Path, as_of: date | None = None
+) -> Path:
     p = Path(out)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(build_dashboard(t), encoding="utf-8")
+    p.write_text(build_dashboard(t, as_of=as_of), encoding="utf-8")
     return p

@@ -12,20 +12,34 @@ from .report import build_report
 from .dashboard import write_dashboard
 from .vendorrisk import (
     assess_vendors,
+    assessment_consistency_issues,
     build_exit_markdown,
     build_exit_plans,
     build_questionnaire_markdown,
     build_risk_markdown,
     concentration,
+    contract_timing,
 )
 
 DEFAULT_DATA_DIR = "data"
 DEFAULT_OUT_DIR = "build"
 
 
+def _reference(args):
+    raw = getattr(args, "as_of", None)
+    if not raw:
+        return date.today()
+    try:
+        return date.fromisoformat(raw)
+    except ValueError as exc:
+        raise DataError(
+            f"invalid --as-of date: {raw!r} (expected YYYY-MM-DD)"
+        ) from exc
+
+
 def cmd_validate(args):
     t = load_tprm(args.data)
-    issues = t.validate()
+    issues = t.validate() + assessment_consistency_issues(t)
     if not issues:
         print("OK - TPRM data quality checks passed.")
         return 0
@@ -36,27 +50,41 @@ def cmd_validate(args):
 
 def cmd_summary(args):
     t = load_tprm(args.data)
-    crit = sum(1 for v in t.vendors if t.vendor_risk(v) == "Crítico")
-    high = sum(1 for v in t.vendors if t.vendor_risk(v) == "Alto")
+    reference = _reference(args)
+    details = assess_vendors(t)
+    crit = sum(1 for d in details if d.residual_level == "Crítico")
+    high = sum(1 for d in details if d.residual_level == "Alto")
     openf = [f for f in t.findings if f.status != "Fechado"]
+    states = [contract_timing(c, reference)[0] for c in t.contracts]
     print("=" * 68)
     print("THIRD-PARTY RISK ASSESSMENT - MERIDIAN PAY (TPRM)")
     print("=" * 68)
+    print(f"Reference date             : {reference.isoformat()}")
     print(f"Vendors                    : {len(t.vendors)}")
     print(f"Assessments                : {len(t.assessments)}")
     print(f"Open findings              : {len(openf)}")
-    print(f"Vendors (Critical/High)    : {crit}/{high}")
-    print(f"Contracts expiring soon    : {sum(1 for c in t.contracts if c.status == 'Vencendo')}")
+    print(f"Vendors residual C/H       : {crit}/{high}")
+    print(
+        f"Contracts expired/expiring : {states.count('Vencido')}/"
+        f"{states.count('Vencendo')}"
+    )
     print("=" * 68)
     return 0
 
 
 def cmd_vendors(args):
     t = load_tprm(args.data)
-    print("ID   NAME                    CRIT   TIER  RISK     OWNER                        END")
-    print("-" * 95)
-    for v in sorted(t.vendors, key=lambda x: ({"Crítico":0,"Alto":1,"Moderado":2,"Baixo":3}[t.vendor_risk(x)], x.vendor_id)):
-        print(f"{v.vendor_id:<5}{v.vendor_name:<24}{v.criticality:<7}{v.tier:<6}{t.vendor_risk(v):<9}{v.owner:<29}{v.contract_end}")
+    by_id = {v.vendor_id: v for v in t.vendors}
+    print("ID     NAME                     TIER    INHERENT    RESIDUAL    COMPL   OWNER                        END")
+    print("-" * 112)
+    for d in assess_vendors(t):
+        vendor = by_id[d.vendor_id]
+        pct = f"{d.compliance_pct}%" if d.compliance_pct is not None else "-"
+        print(
+            f"{d.vendor_id:<7}{d.vendor_name[:23]:<25}{d.tier:<8}"
+            f"{d.inherent_level:<12}{d.residual_level:<12}{pct:<8}"
+            f"{vendor.owner:<29}{vendor.contract_end}"
+        )
     return 0
 
 
@@ -75,7 +103,7 @@ def cmd_report(args):
     t = load_tprm(args.data)
     out = Path(args.out) / "tprm-report.md"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(build_report(t), encoding="utf-8")
+    out.write_text(build_report(t, _reference(args)), encoding="utf-8")
     print(f"report written: {out}")
     return 0
 
@@ -83,7 +111,7 @@ def cmd_report(args):
 def cmd_dashboard(args):
     t = load_tprm(args.data)
     out = Path(args.out) / "tprm-dashboard.html"
-    p = write_dashboard(t, out)
+    p = write_dashboard(t, out, _reference(args))
     print(f"dashboard written: {p}")
     return 0
 
@@ -156,11 +184,17 @@ def build_parser():
     p.add_argument("--out", default=DEFAULT_OUT_DIR)
     sp = p.add_subparsers(dest="command", required=True)
     sp.add_parser("validate").set_defaults(func=cmd_validate)
-    sp.add_parser("summary").set_defaults(func=cmd_summary)
+    summary_parser = sp.add_parser("summary")
+    summary_parser.add_argument("--as-of", default=None, help="reference date YYYY-MM-DD (default: today)")
+    summary_parser.set_defaults(func=cmd_summary)
     sp.add_parser("vendors").set_defaults(func=cmd_vendors)
     sp.add_parser("findings").set_defaults(func=cmd_findings)
-    sp.add_parser("report").set_defaults(func=cmd_report)
-    sp.add_parser("dashboard").set_defaults(func=cmd_dashboard)
+    report_parser = sp.add_parser("report")
+    report_parser.add_argument("--as-of", default=None, help="reference date YYYY-MM-DD (default: today)")
+    report_parser.set_defaults(func=cmd_report)
+    dashboard_parser = sp.add_parser("dashboard")
+    dashboard_parser.add_argument("--as-of", default=None, help="reference date YYYY-MM-DD (default: today)")
+    dashboard_parser.set_defaults(func=cmd_dashboard)
     sp.add_parser("risk", help="inherent x residual risk + concentration").set_defaults(func=cmd_risk)
     sp.add_parser("questionnaire", help="due diligence questionnaire coverage").set_defaults(func=cmd_questionnaire)
     exit_parser = sp.add_parser("exit-plan", help="Tier 1 exit plans")

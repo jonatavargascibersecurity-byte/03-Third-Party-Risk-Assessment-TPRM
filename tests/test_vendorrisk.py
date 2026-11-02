@@ -1,16 +1,19 @@
 """Tests for inherent/residual scoring, concentration and exit plans."""
 
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
 from tprm.loader import load_tprm
 from tprm.vendorrisk import (
     assess_vendors,
+    assessment_consistency_issues,
     build_exit_plans,
     build_exit_markdown,
     build_questionnaire_markdown,
     build_risk_markdown,
     concentration,
+    contract_timing,
 )
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
@@ -46,6 +49,35 @@ def test_tier1_exit_plans_have_contract_and_pending_items():
     md = build_exit_markdown(plans, date(2026, 11, 2))
     assert "DORA" in md
     assert "Runbook de saida" in md
+
+
+def test_assessments_match_canonical_risk_model():
+    t = load_tprm(DATA_DIR)
+    assert assessment_consistency_issues(t) == []
+    broken = replace(t.assessments[0], residual_risk="Baixo")
+    issues = assessment_consistency_issues(replace(t, assessments=[broken]))
+    assert any("residual_risk" in issue for issue in issues)
+
+
+def test_contract_state_is_derived_from_dates():
+    t = load_tprm(DATA_DIR)
+    contract = t.contracts_by_vendor["V-008"]
+    assert contract.status == "Vencido"
+    assert contract_timing(contract, date(2026, 11, 2))[0] == "Vencido"
+    future = replace(contract, end_date="2027-06-01")
+    assert contract_timing(future, date(2026, 11, 2))[0] == "Ativo"
+    soon = replace(contract, end_date="2026-12-01")
+    assert contract_timing(soon, date(2026, 11, 2))[0] == "Vencendo"
+
+
+def test_expired_tier1_contract_is_an_exit_plan_gap():
+    t = load_tprm(DATA_DIR)
+    plans = build_exit_plans(t, date(2027, 2, 2))
+    plan = next(p for p in plans if p.vendor_id == "V-001")
+    assert plan.overall == "Gap"
+    renewal = next(c for c in plan.checks if c.label == "Janela de renovacao monitorada")
+    assert renewal.status == "Gap"
+    assert "vencido" in renewal.detail.lower()
 
 
 def test_markdown_outputs():
