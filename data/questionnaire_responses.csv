@@ -1,0 +1,41 @@
+vendor_id,question_id,response,evidence,assessed_on
+V-001,Q01,Sim,Politica MFA v3; SAML enforced for admins,2026-09-01
+V-001,Q02,Sim,TLS 1.2+; KMS keys rotated 90d,2026-09-01
+V-001,Q03,Parcial,Scanner semanal; SLA nao monitorado em dashboard,2026-09-01
+V-001,Q04,Sim,Logs retidos 12m; alertas para acesso privilegiado,2026-09-01
+V-001,Q05,Sim,DPA assinado; SCCs para transferencia UE-BR,2026-09-01
+V-001,Q06,Parcial,Plano existe; teste de mesa sem relatorio formal,2026-09-01
+V-001,Q07,Sim,Lista de subprocessadores publicada; notificacao 30d,2026-09-01
+V-001,Q08,Sim,Clausula de auditoria anual no MSA,2026-09-01
+V-002,Q01,Sim,MFA para console e API admin,2026-09-05
+V-002,Q02,Sim,PCI DSS; criptografia em repouso e transito,2026-09-05
+V-002,Q03,Sim,ASV trimestral; SLA 30/60/90,2026-09-05
+V-002,Q04,Sim,Logs PCI retidos 12m,2026-09-05
+V-002,Q05,Sim,DPA + PCI addendum,2026-09-05
+V-002,Q06,Parcial,Teste anual; evidencias de RTO incompletas,2026-09-05
+V-002,Q07,Parcial,Lista parcial; notificacao de mudanca informal,2026-09-05
+V-002,Q08,Sim,Direito de auditoria e relatorio AOC,2026-09-05
+V-004,Q01,Sim,MFA obrigatorio para operadores,2026-09-12
+V-004,Q02,Sim,Criptografia de biometricos em repouso,2026-09-12
+V-004,Q03,Parcial,SLA definido; 3 criticos vencidos,2026-09-12
+V-004,Q04,Parcial,Logs de acesso a biometricos com retencao de 3m,2026-09-12
+V-004,Q05,Sim,DPA LGPD; base legal documentada,2026-09-12
+V-004,Q06,Nao,Plano de continuidade nao testado nos ultimos 12m,2026-09-12
+V-004,Q07,Parcial,Subprocessadores de OCR nao declarados,2026-09-12
+V-004,Q08,Sim,Clausula de auditoria no DPA,2026-09-12
+V-009,Q01,Sim,SSO + MFA para mantenedores,2026-09-22
+V-009,Q02,Sim,Repositorios criptografados; TLS,2026-09-22
+V-009,Q03,Sim,SAST/DAST no pipeline; SLA por severidade,2026-09-22
+V-009,Q04,Parcial,Audit log retido 3m,2026-09-22
+V-009,Q05,Parcial,DPA em revisao juridica,2026-09-22
+V-009,Q06,Sim,Failover testado; RTO 4h documentado,2026-09-22
+V-009,Q07,Sim,Subprocessadores de CI declarados,2026-09-22
+V-009,Q08,Parcial,Auditoria mediante solicitacao; sem SLA,2026-09-22
+V-010,Q01,Sim,MFA e RBAC para administracao,2026-09-25
+V-010,Q02,Sim,Criptografia gerenciada pelo provedor,2026-09-25
+V-010,Q03,Sim,Scanner continuo; SLA 15/30/60,2026-09-25
+V-010,Q04,Sim,Retencao de 12m; alertas de acesso,2026-09-25
+V-010,Q05,Sim,DPA assinado; logs pseudonimizados,2026-09-25
+V-010,Q06,Sim,Teste semestral com relatorio,2026-09-25
+V-010,Q07,Sim,Lista publica e notificacao 60d,2026-09-25
+V-010,Q08,Sim,Auditoria anual e acesso a evidencias,2026-09-25

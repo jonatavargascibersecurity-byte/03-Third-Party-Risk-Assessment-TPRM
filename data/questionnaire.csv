@@ -1,0 +1,9 @@
+question_id,domain,question,weight,expected_evidence,applies_to
+Q01,Seguranca,MFA obrigatorio para acesso administrativo e remoto,3,Politica MFA; print de configuracao; lista de excecoes,Tier 1;Tier 2
+Q02,Seguranca,Criptografia em repouso e em transito para dados sensiveis,3,Politica de criptografia; inventario de chaves; TLS configurado,Tier 1;Tier 2
+Q03,Seguranca,Gestao de vulnerabilidades com SLA por severidade,2,Relatorio de scanner; SLA; evidencias de remediacao,Tier 1;Tier 2
+Q04,Seguranca,Monitoramento e retencao de logs por no minimo 6 meses,2,Configuracao de SIEM; politica de retencao; alertas,Tier 1;Tier 2
+Q05,Privacidade,DPA/LGPD assinado com base legal e finalidade definidas,3,DPA assinado; registro de tratamento; clausulas de transferencia,Tier 1;Tier 2
+Q06,Continuidade,Plano de continuidade testado nos ultimos 12 meses,3,Plano de continuidade; relatorio de teste; RTO/RPO,Tier 1;Tier 2
+Q07,Subprocessadores,Lista de subprocessadores e notificacao de mudancas,2,Lista atualizada; clausula de notificacao; fluxo de aprovacao,Tier 1;Tier 2
+Q08,Contratual,Clausula de auditoria e direito de acesso a evidencias,2,Contrato; clausula de auditoria; canal de evidencias,Tier 1;Tier 2

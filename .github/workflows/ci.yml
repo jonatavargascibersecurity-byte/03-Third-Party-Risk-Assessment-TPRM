@@ -26,6 +26,9 @@ jobs:
         run: |
           python -m tprm report --out build
           python -m tprm dashboard --out build
+          python -m tprm --out build risk
+          python -m tprm --out build questionnaire
+          python -m tprm --out build exit-plan --as-of 2026-11-02
       - uses: actions/upload-artifact@v4
         with:
           name: tprm-artefacts

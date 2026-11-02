@@ -4,11 +4,20 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 from .loader import DataError, load_tprm
 from .report import build_report
 from .dashboard import write_dashboard
+from .vendorrisk import (
+    assess_vendors,
+    build_exit_markdown,
+    build_exit_plans,
+    build_questionnaire_markdown,
+    build_risk_markdown,
+    concentration,
+)
 
 DEFAULT_DATA_DIR = "data"
 DEFAULT_OUT_DIR = "build"
@@ -79,6 +88,68 @@ def cmd_dashboard(args):
     return 0
 
 
+def cmd_risk(args):
+    t = load_tprm(args.data)
+    details = assess_vendors(t)
+    rows = concentration(details)
+    country_rows = concentration(details, dimension="country")
+    out = Path(args.out) / "tprm-risk-assessment.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(build_risk_markdown(details, rows, country_rows), encoding="utf-8")
+    print("VENDOR                  TIER    INHERENT      RESIDUAL      COMPL  C/A")
+    print("-" * 82)
+    for d in details:
+        pct = f"{d.compliance_pct}%" if d.compliance_pct is not None else "-"
+        print(
+            f"{d.vendor_name[:22]:<24}{d.tier:<8}{d.inherent_level:<14}{d.residual_level:<14}"
+            f"{pct:<7}{d.open_critical}/{d.open_high}"
+        )
+    print("")
+    for label, group in (("category", rows), ("country", country_rows)):
+        flagged = [r for r in group if r.flagged]
+        print(f"concentration alerts ({label}): {len(flagged)}")
+        for row in flagged:
+            print(f"  - {row.category}: {row.share_pct}% ({row.tier1} Tier 1)")
+    print(f"report written: {out}")
+    return 0
+
+
+def cmd_questionnaire(args):
+    t = load_tprm(args.data)
+    details = assess_vendors(t)
+    out = Path(args.out) / "tprm-questionnaire.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(build_questionnaire_markdown(t, details), encoding="utf-8")
+    assessed = sum(1 for d in details if d.assessed)
+    print(f"vendors assessed: {assessed}/{len(details)}")
+    for d in details:
+        pct = f"{d.compliance_pct}%" if d.compliance_pct is not None else "not assessed"
+        print(f"  {d.vendor_id} {d.vendor_name[:24]:<26} {pct}")
+    print(f"report written: {out}")
+    return 0
+
+
+def cmd_exit_plan(args):
+    t = load_tprm(args.data)
+    try:
+        as_of = date.fromisoformat(args.as_of) if args.as_of else date.today()
+    except ValueError:
+        print(f"invalid --as-of date: {args.as_of!r} (expected YYYY-MM-DD)", file=sys.stderr)
+        return 3
+    plans = build_exit_plans(t, as_of)
+    out = Path(args.out) / "tprm-exit-plans.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(build_exit_markdown(plans, as_of), encoding="utf-8")
+    print("EXIT PLANS (Tier 1)")
+    for plan in plans:
+        print(
+            f"  {plan.vendor_id} {plan.vendor_name[:24]:<26} {plan.overall:<12} "
+            f"gaps={len(plan.gaps)} pending={len(plan.pending)}"
+        )
+    print(f"report written: {out}")
+    return 0
+
+
 def build_parser():
     p = argparse.ArgumentParser(prog="tprm", description="Third-Party Risk Assessment (TPRM)")
     p.add_argument("--data", default=DEFAULT_DATA_DIR)
@@ -90,6 +161,11 @@ def build_parser():
     sp.add_parser("findings").set_defaults(func=cmd_findings)
     sp.add_parser("report").set_defaults(func=cmd_report)
     sp.add_parser("dashboard").set_defaults(func=cmd_dashboard)
+    sp.add_parser("risk", help="inherent x residual risk + concentration").set_defaults(func=cmd_risk)
+    sp.add_parser("questionnaire", help="due diligence questionnaire coverage").set_defaults(func=cmd_questionnaire)
+    exit_parser = sp.add_parser("exit-plan", help="Tier 1 exit plans")
+    exit_parser.add_argument("--as-of", default=None, help="reference date YYYY-MM-DD (default: today)")
+    exit_parser.set_defaults(func=cmd_exit_plan)
     return p
 
 

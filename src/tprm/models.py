@@ -132,3 +132,40 @@ class Contract:
             subprocessors_required=_s(r["subprocessors_required"]),
             owner=_s(r["owner"]), status=_s(r["status"]),
         )
+
+
+@dataclass(frozen=True)
+class QuestionnaireQuestion:
+    question_id: str
+    domain: str
+    question: str
+    weight: int
+    expected_evidence: str
+    applies_to: str
+
+    @classmethod
+    def from_row(cls, r):
+        return cls(
+            question_id=_s(r["question_id"]), domain=_s(r["domain"]),
+            question=_s(r["question"]), weight=_i(r["weight"], "weight", r["question_id"]),
+            expected_evidence=_s(r["expected_evidence"]),
+            applies_to=_s(r.get("applies_to", "")),
+        )
+
+
+@dataclass(frozen=True)
+class QuestionnaireResponse:
+    vendor_id: str
+    question_id: str
+    response: str
+    evidence: str
+    assessed_on: str
+
+    @classmethod
+    def from_row(cls, r):
+        return cls(
+            vendor_id=_s(r["vendor_id"]), question_id=_s(r["question_id"]),
+            response=_s(r["response"]), evidence=_s(r["evidence"]),
+            assessed_on=_s(r["assessed_on"]),
+        )
+
