@@ -10,6 +10,19 @@ Three artefacts are produced from the same data:
   readiness, not just a boolean column.
 
 All formulas are intentionally transparent so an auditor can recompute them.
+
+Reference material used to design the model (verified 2026-11-03):
+
+* TryHackMe — Risk Management (Frame -> Assess -> Respond -> Monitor):
+  https://tryhackme.com/room/seriskmanagement
+* LetsDefend — Risk Management (quantitative vs qualitative calculation):
+  https://app.letsdefend.io/training/lessons/risk-management
+* LetsDefend — Security Product Selection (structured vendor comparison):
+  https://app.letsdefend.io/training/lessons/security-product-selection
+* HTB Academy — Supply Chain Attacks (third-party/supply-chain lifecycle):
+  https://academy.hackthebox.com/course/preview/supply-chain-attacks
+* TryHackMe — Governance & Regulation (GRC, ISO/IEC 27001, SOC 2, privacy):
+  https://tryhackme.com/room/cybergovernanceregulation
 """
 
 from __future__ import annotations

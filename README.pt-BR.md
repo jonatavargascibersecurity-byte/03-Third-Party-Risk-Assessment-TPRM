@@ -2,6 +2,8 @@
 
 Toolkit de gestão de risco de fornecedores para uma fintech brasileira fictícia (**Meridian Pay**). Cobre tiering de fornecedores, score de risco, acompanhamento de achados e monitoramento de risco contratual.
 
+> **Conteúdos reais que este repositório aplica:** [TryHackMe — Governance & Regulation](https://tryhackme.com/room/cybergovernanceregulation) · [TryHackMe — Risk Management](https://tryhackme.com/room/seriskmanagement) · [LetsDefend — Risk Management](https://app.letsdefend.io/training/lessons/risk-management) · [LetsDefend — Security Product Selection](https://app.letsdefend.io/training/lessons/security-product-selection) · [HTB Academy — Supply Chain Attacks](https://academy.hackthebox.com/course/preview/supply-chain-attacks). Seções, tasks e artefatos estão em [`PLATFORMS.md`](PLATFORMS.md) e no [write-up de evidência](learning-log/2026-11-03-tprm-platform-evidence.md).
+
 ## Por que TPRM para entrada
 
 Bancos, fintechs, Big 4 e MSSPs precisam de analistas de risco de terceiros. Este projeto mapeia diretamente para **DORA** (risco de terceiros de TIC), **LGPD** (operador / transferência de dados), **NIST SP 800-161** e **ISO/IEC 27001 A.5.19-A.5.23**.
@@ -36,15 +38,17 @@ python -m tprm --out build exit-plan --as-of 2026-11-02
 
 ## Alinhamento com plataformas de estudo
 
-Este repositório é um laboratório de prática para trilhas de GRC, risco de terceiros e defesa. Cada sala/trilha vira uma melhoria rastreável; o mapeamento completo (plataforma, link, artefato e o que foi resolvido) está em [`PLATFORMS.md`](PLATFORMS.md).
+Este repositório é um laboratório de prática para trilhas de GRC, risco de terceiros e defesa. Cada conteúdo abaixo é **real e existe na plataforma**; o link aponta para a sala/curso/módulo específico, não para a home da plataforma.
 
-| Plataforma / trilha | Link | Como o repositório aplica |
-|---|---|---|
-| TryHackMe - Governance & Regulation | [sala](https://tryhackme.com/room/cybergovernanceregulation) | Due diligence, DPA, transferência internacional e trilha de auditoria em 8 perguntas. |
-| TryHackMe - Threats & Risks | [módulo](https://tryhackme.com/module/threats-and-risks) | Risco inerente x residual por fornecedor e priorização por exposição. |
-| LetsDefend - SOC Manager Path | [trilha](https://app.letsdefend.io/training) | Achados com severidade, dono, prazo e evidência no formato de avaliação. |
-| HTB Academy - SOC Analyst Path | [trilha](https://academy.hackthebox.com/path/preview/soc-analyst) | Relatório e checklist de saída com itens verificáveis. |
-| HTB - Governance & Compliance | [recursos](https://www.hackthebox.com/cybersecurity-resources/governance_compliance) | DORA Art. 28-30 e LGPD Art. 46/49 aplicados a terceiros. |
+| Plataforma / conteúdo real | Link | O que o conteúdo cobre | Onde o repositório aplica |
+|---|---|---|---|
+| **TryHackMe — Governance & Regulation** (sala) | https://tryhackme.com/room/cybergovernanceregulation | Framework GRC, ISO/IEC 27001, SOC 2, NIST SP 800-53, privacidade e proteção de dados | `data/questionnaire.csv` (Q05 DPA/LGPD, Q07 subprocessadores, Q08 auditoria) e `data/contracts.csv` (`dpa_signed`, `security_addendum`, `subprocessors_required`) |
+| **TryHackMe — Risk Management** (sala) | https://tryhackme.com/room/seriskmanagement | Ciclo Frame → Assess → Respond → Monitor; risco de supply chain no monitoramento | `src/tprm/vendorrisk.py` (`inherent_points`, `residual_points`, `concentration`, `contract_timing`) e os artefatos `risk`, `report`, `dashboard` |
+| **LetsDefend — Risk Management** (curso) | https://app.letsdefend.io/training/lessons/risk-management | Terminologia, framework, avaliação passo a passo e cálculo quantitativo vs qualitativo | `src/tprm/scales.py` (escala 0-10, níveis Crítico/Alto/Moderado/Baixo) e a regra `residual <= inerente` |
+| **LetsDefend — Security Product Selection** (SOC Manager) | https://app.letsdefend.io/training/lessons/security-product-selection | Requisitos técnicos/negócio e comparação estruturada de fornecedores | `data/vendors.csv` (`tier`, `criticality`) + `data/questionnaire.csv` (pesos 1-3) e cobertura de due diligence |
+| **HTB Academy — Supply Chain Attacks** (módulo) | https://academy.hackthebox.com/course/preview/supply-chain-attacks | Ciclo do ataque, supply chain de hardware/software, vetores, SolarWinds, insider threats e mitigação | `subprocessors_required` no contrato, `exit-plan` Tier 1 e concentração por categoria/país (DORA Art. 28-29) |
+
+Os cinco conteúdos foram verificados em 2026-11-03. O detalhamento de cada seção/task, o que foi aprendido e a evidência reproduzível estão em [`learning-log/2026-11-03-tprm-platform-evidence.md`](learning-log/2026-11-03-tprm-platform-evidence.md) e no mapeamento completo em [`PLATFORMS.md`](PLATFORMS.md).
 
 ### Artefatos de risco de terceiros
 
