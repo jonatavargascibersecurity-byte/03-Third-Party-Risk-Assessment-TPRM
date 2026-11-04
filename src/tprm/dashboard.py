@@ -11,7 +11,7 @@ from html import escape
 from pathlib import Path
 
 from .loader import TPRMSet
-from .vendorrisk import assess_vendors, contract_timing
+from .vendorrisk import assess_vendors, concentration, contract_timing
 
 CSS = """
 :root{--bg:#f4f6f8;--card:#fff;--ink:#1b2430;--muted:#5c6b7a;--line:#dfe5ec}
@@ -133,6 +133,19 @@ def build_dashboard(
             f"<td>{detail.open_critical}/{detail.open_high}</td>"
             f"<td class='muted'>{_esc(end_date)}</td>"
             f"<td>{_pill(state_text, STATE_COLOR.get(state, '#5c6b7a'))}</td></tr>"
+        )
+    add("</tbody></table>")
+    add(
+        "<h2>Concentration by Country - DORA Art. 29</h2><table><thead><tr>"
+        "<th>Country</th><th>Vendors</th><th>Tier 1</th><th>Risk weight</th>"
+        "<th>Share</th><th>Alert</th></tr></thead><tbody>"
+    )
+    for row in concentration(details, dimension="country"):
+        alert = _pill("ALERTA", "#c62828") if row.flagged else "-"
+        add(
+            f"<tr><td>{_esc(row.category)}</td><td>{row.vendors}</td>"
+            f"<td>{row.tier1}</td><td>{row.weight}</td>"
+            f"<td>{row.share_pct}%</td><td>{alert}</td></tr>"
         )
     add("</tbody></table>")
     add(

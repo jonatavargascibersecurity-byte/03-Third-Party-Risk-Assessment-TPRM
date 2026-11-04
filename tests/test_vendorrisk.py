@@ -4,7 +4,9 @@ from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
+from tprm.dashboard import build_dashboard
 from tprm.loader import load_tprm
+from tprm.report import build_report
 from tprm.vendorrisk import (
     assess_vendors,
     assessment_consistency_issues,
@@ -78,6 +80,17 @@ def test_expired_tier1_contract_is_an_exit_plan_gap():
     renewal = next(c for c in plan.checks if c.label == "Janela de renovacao monitorada")
     assert renewal.status == "Gap"
     assert "vencido" in renewal.detail.lower()
+
+
+def test_report_and_dashboard_include_country_concentration():
+    t = load_tprm(DATA_DIR)
+    reference = date(2026, 11, 2)
+    report = build_report(t, reference)
+    dashboard = build_dashboard(t, as_of=reference)
+    for output in (report, dashboard):
+        assert "26.6%" in output
+        assert "US" in output
+        assert "ALERTA" in output or "SIM" in output
 
 
 def test_markdown_outputs():

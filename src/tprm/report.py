@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 
 from .loader import TPRMSet
-from .vendorrisk import assess_vendors, contract_timing
+from .vendorrisk import assess_vendors, concentration, contract_timing
 
 COMPANY = "Meridian Pay"
 
@@ -114,7 +114,17 @@ def build_report(t: TPRMSet, as_of: date | None = None) -> str:
             f"{contract.security_addendum} | {contract.dpa_signed} |"
         )
     add("")
-    add("## 5) Methodology")
+    add("## 5) Concentration risk (DORA Art. 29)")
+    add("")
+    add("| Country | Vendors | Tier 1 | Risk weight | Share | Alert |")
+    add("|---|---|---|---|---|---|")
+    for row in concentration(details, dimension="country"):
+        add(
+            f"| {row.category} | {row.vendors} | {row.tier1} | {row.weight} | "
+            f"{row.share_pct}% | {'SIM' if row.flagged else '-'} |"
+        )
+    add("")
+    add("## 6) Methodology")
     add("")
     add(
         "- **Inherent** = criticality (1-4) + data sensitivity (0-2) + network reach (0-2)."
